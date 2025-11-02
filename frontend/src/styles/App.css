@@ -1,0 +1,269 @@
+/* Custom styles for FileShare app */
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* Upload Form Styles */
+.dropzone {
+  border: 2px dashed #dee2e6;
+  border-radius: 10px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+}
+
+.dropzone:hover {
+  border-color: #0d6efd;
+  background-color: #e7f1ff;
+}
+
+.dropzone.active {
+  border-color: #0d6efd;
+  background-color: #e7f1ff;
+}
+
+.dropzone.reject {
+  border-color: #dc3545;
+  background-color: #f8d7da;
+}
+
+.dropzone.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* File List Styles */
+.table-responsive {
+  border-radius: 0.375rem;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table td {
+  vertical-align: middle;
+  border-top: 1px solid #f1f3f4;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Badge Styles */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Card Styles */
+.card {
+  border: none;
+  border-radius: 0.75rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+}
+
+/* Button Styles */
+.btn {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Progress Bar */
+.progress {
+  height: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.progress-bar {
+  border-radius: 0.25rem;
+}
+
+/* Alert Styles */
+.alert {
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.alert-info {
+  background-color: #e7f3ff;
+  color: #0c5460;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.alert-success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+/* Pagination Styles */
+.pagination .page-link {
+  border-radius: 0.375rem;
+  margin: 0 0.125rem;
+  border: 1px solid #dee2e6;
+  color: #0d6efd;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.pagination .page-link:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+/* Footer Styles */
+footer {
+  margin-top: auto;
+}
+
+footer h5, footer h6 {
+  color: #fff;
+}
+
+footer ul li {
+  color: #adb5bd;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2rem;
+  }
+  
+  .display-6 {
+    font-size: 1.5rem;
+  }
+  
+  .dropzone {
+    padding: 2rem 1rem;
+  }
+  
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* File type icons */
+.file-icon {
+  font-size: 1.25rem;
+  margin-right: 0.5rem;
+}
+
+/* Toast notifications */
+.Toastify__toast {
+  border-radius: 0.5rem;
+}
+
+.Toastify__toast--success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.Toastify__toast--error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.Toastify__toast--warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.Toastify__toast--info {
+  background-color: #e7f3ff;
+  color: #0c5460;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Utility classes */
+.text-break {
+  word-break: break-word;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* File preview styles */
+.file-preview {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* Status indicators */
+.status-active {
+  color: #198754;
+}
+
+.status-expired {
+  color: #dc3545;
+}
+
+.status-limited {
+  color: #fd7e14;
+}

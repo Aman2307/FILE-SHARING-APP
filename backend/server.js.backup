@@ -1,0 +1,257 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const path = require('path');
+const fs = require('fs');
+const cookieParser = require('cookie-parser');
+const mongoose = require('mongoose');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+
+// Import database connection
+const connectDB = require('./config/db');
+
+// Import middleware
+const { apiLimiter } = require('./middleware/rateLimit');
+
+// Import routes
+const uploadRoutes = require('./routes/upload');
+const downloadRoutes = require('./routes/download');
+const fileRoutes = require('./routes/files');
+
+// Initialize Express app
+const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.IO
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST']
+  },
+  // Enable WebSocket compression
+  perMessageDeflate: {
+    zlibDeflateOptions: {
+      // See zlib defaults.
+      chunkSize: 1024,
+      memLevel: 7,
+      level: 3
+    },
+    zlibInflateOptions: {
+      chunkSize: 10 * 1024
+    },
+    // Other options
+    clientNoContextTakeover: true, // Defaults to negotiated value
+    serverNoContextTakeover: true, // Defaults to negotiated value
+    serverMaxWindowBits: 10, // Defaults to negotiated value
+    // Below options specify what mime types to compress
+    threshold: 1024, // Size threshold (in bytes) for compression
+    level: 3 // Compression level
+  }
+});
+
+// Make io accessible to routes
+app.set('io', io);
+
+// Connect to MongoDB
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+// Only connect to DB if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
+
+// Trust proxy for accurate IP addresses
+app.set('trust proxy', 1);
+
+// Security middleware
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  hsts: process.env.ENABLE_HSTS === 'true' ? undefined : false,
+}));
+
+// Compression middleware
+app.use(compression());
+
+// Cookie parser
+app.use(cookieParser());
+
+// Attach sessionToken to all JSON responses if available
+app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.json = (body) => {
+    if (body && typeof body === 'object' && req.sessionToken && !body.sessionToken) {
+      body.sessionToken = req.sessionToken;
+    }
+    return originalJson(body);
+  };
+  next();
+});
+
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Token']
+};
+
+app.use(cors(corsOptions));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Static file serving for uploads (development only)
+if (process.env.NODE_ENV === 'development') {
+  const uploadsDir = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  
+  app.use('/uploads', express.static(uploadsDir));
+}
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// API routes
+app.use('/api/upload', uploadRoutes);
+app.use('/api/download', downloadRoutes);
+app.use('/api/files', fileRoutes);
+
+// Redirect share page requests to frontend app
+app.get('/download/:id', (req, res) => {
+  const frontend = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const target = `${frontend}/download/${req.params.id}`;
+  res.redirect(302, target);
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'File Sharing API',
+    version: '1.0.0',
+    endpoints: {
+      upload: '/api/upload',
+      download: '/api/download/:id',
+      files: '/api/files',
+      health: '/health'
+    }
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Endpoint not found'
+  });
+});
+
+// Global error handler
+app.use((error, req, res, next) => {
+  console.error('Global error handler:', error);
+  
+  // CORS error
+  if (error.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      success: false,
+      message: 'CORS policy violation'
+    });
+  }
+  
+  // Default error response
+  res.status(error.status || 500).json({
+    success: false,
+    message: error.message || 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
+
+// Start server
+const PORT = process.env.PORT || 5000;
+const server = httpServer.listen(PORT, () => {
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`WebSocket server running on port ${PORT}`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err, promise) => {
+  console.error('Unhandled Promise Rejection:', err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+// Export both app and server for testing
+module.exports = {
+  app,
+  server,
+  connectDB,
+  close: () => {
+    if (server) return server.close();
+    return Promise.resolve();
+  }
+};
