@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/FILE-SHARING-APP/static/css/main.5efd5012.css",
+    "main.js": "/FILE-SHARING-APP/static/js/main.9d9e3d76.js",
+    "index.html": "/FILE-SHARING-APP/index.html",
+    "main.5efd5012.css.map": "/FILE-SHARING-APP/static/css/main.5efd5012.css.map",
+    "main.9d9e3d76.js.map": "/FILE-SHARING-APP/static/js/main.9d9e3d76.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5efd5012.css",
+    "static/js/main.9d9e3d76.js"
+  ]
+}
